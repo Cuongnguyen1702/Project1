@@ -22,7 +22,7 @@ plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'Marke
 legend
 %4.Calculate the quantizer error variance (𝜎𝑠𝑞2)^2 and the ratio of average signal power to average quantization noise power (𝑆/𝑁)𝑠𝑞2 by the numerical method.
 %Quantizer error variance(numerical method)
-sigma_sq_2 = quantizer_error_variance(s_q_2, q)
+variance_sq_2 = quantizer_error_variance(s_q_2, q)
 %(S/N)sq2(numerical method)
 SNR_sq2 = SNR_quant(mSpeech, s_q_2, t)
 
@@ -64,13 +64,13 @@ function quant_err_variance = quantizer_error_variance(signal, q)
     quant_err_variance = p_e*((h/3)*(fei(a)+fei(b)+4*sumile+2*sumichan));
 end
 
-function SNR_result = SNR_quant(mSpeech, signal, t)
-    e_uni = mSpeech(1:length(t))-signal;
+function SNR_result = SNR_quant(original, signal, t)
+    e_uni = original(1:length(t))-signal;
     pow_noise_uni = 0;
     pow_sig = 0;
     for i=1:length(t)
-        pow_noise_uni = pow_noise_uni + e_uni(i)^2;
-        pow_sig = pow_sig + mSpeech(i)^2;
+        pow_sig = mean(pow_sig + original(i)^2);
+        pow_noise_uni = mean(pow_noise_uni + e_uni(i)^2);
     end
     SNR_result = pow_sig/pow_noise_uni;
 end
