@@ -69,8 +69,8 @@ function SNR_result = SNR_quant(original, signal, t)
     pow_noise_uni = 0;
     pow_sig = 0;
     for i=1:length(t)
-        pow_sig = mean(pow_sig + original(i)^2);
-        pow_noise_uni = mean(pow_noise_uni + e_uni(i)^2);
+        pow_sig = pow_sig + original(i)^2;
+        pow_noise_uni = pow_noise_uni + e_uni(i)^2;
     end
     SNR_result = pow_sig/pow_noise_uni;
 end
