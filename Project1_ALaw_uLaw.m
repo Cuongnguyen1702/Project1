@@ -8,7 +8,7 @@ Fs = 4000;
 [mSpeech, Fs] = audioread("MaleSpeech-16-4-mono-20secs.wav");
 
 t = 0:1/Fs:1.5;
-mSpeech = mSpeech*10;
+mSpeech = mSpeech*10;%Amplifying signal
 plot(t, mSpeech(1:length(t)), 'LineWidth', 2, 'DisplayName','Sample signal');
 grid;
 hold on;
@@ -22,31 +22,9 @@ plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'Marke
 legend
 %4.Calculate the quantizer error variance (𝜎𝑠𝑞2)^2 and the ratio of average signal power to average quantization noise power (𝑆/𝑁)𝑠𝑞2 by the numerical method.
 %Quantizer error variance(numerical method)
-p_e = 1/q;
-b = q/2;
-a = -q/2;
-N = length(s_q_2);
-h = (b-a)/N;
-fe = 'e^2';
-fei = str2func(['@(e)', fe]);
-sumile = 0;
-sumichan = 0;
-for i=1:2:N-1
-    sumile = sumile + fei(a+i*h);
-end
-for i=2:2:N-1
-    sumichan = sumichan + fei(a+i*h);
-end
-quantizer_err_variance = p_e*((h/3)*(fei(a)+fei(b)+4*sumile+2*sumichan))
+sigma_sq_2 = quantizer_error_variance(s_q_2, q)
 %(S/N)sq2(numerical method)
-e_uni = mSpeech(1:length(t))-s_q_2;
-pow_noise_uni = 0;
-pow_sig = 0;
-for i=1:length(t)
-    pow_noise_uni = pow_noise_uni + e_uni(i)^2;
-    pow_sig = pow_sig + mSpeech(i)^2;
-end
-SNR_uni = pow_sig/pow_noise_uni
+SNR_sq2 = SNR_quant(mSpeech, s_q_2, t)
 
 %quan_uni function
 function quan_sig = quan_uni(signal, q)
@@ -65,4 +43,34 @@ function quan_sig = quan_uni(signal, q)
             quan_sig(i) = quan_sig(i) + q/2;
         end
     end
+end
+%quantizer_error_variance function
+function quant_err_variance = quantizer_error_variance(signal, q)
+    p_e = 1/q;
+    b = q/2;
+    a = -q/2;
+    N = length(signal);
+    h = (b-a)/N;
+    fe = 'e^2';
+    fei = str2func(['@(e)', fe]);
+    sumile = 0;
+    sumichan = 0;
+    for i=1:2:N-1
+        sumile = sumile + fei(a+i*h);
+    end
+    for i=2:2:N-1
+        sumichan = sumichan + fei(a+i*h);
+    end
+    quant_err_variance = p_e*((h/3)*(fei(a)+fei(b)+4*sumile+2*sumichan));
+end
+
+function SNR_result = SNR_quant(mSpeech, signal, t)
+    e_uni = mSpeech(1:length(t))-signal;
+    pow_noise_uni = 0;
+    pow_sig = 0;
+    for i=1:length(t)
+        pow_noise_uni = pow_noise_uni + e_uni(i)^2;
+        pow_sig = pow_sig + mSpeech(i)^2;
+    end
+    SNR_result = pow_sig/pow_noise_uni;
 end
