@@ -8,13 +8,14 @@ Fs = 4000;
 [mSpeech, Fs] = audioread("MaleSpeech-16-4-mono-20secs.wav");
 
 t = 0:1/Fs:1.5;
+mSpeech = mSpeech*10;
 plot(t, mSpeech(1:length(t)), 'LineWidth', 2, 'DisplayName','Sample signal');
 grid;
 hold on;
 %2.Quantize the sample signal ‘mSpeech’ with 𝐿 = 16, 𝑞 = 𝑉_𝑝/(𝐿 − 1), called 𝑠𝑞2 signal.
 L = 16; 
 V_p = 0.5625;
-q = V_p/(L - 1);
+q = (V_p-(-V_p))/(L - 1);
 s_q_2 = quan_uni(mSpeech(1:length(t)), q);
 %3.Plot ‘mSpeech‘ and 𝑠𝑞2.
 plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r','DisplayName','Uniform quantized values');
@@ -47,6 +48,21 @@ for i=1:length(t)
 end
 SNR_uni = pow_sig/pow_noise_uni
 
-function y = quan_uni(signal, step)
-    y = step*round(signal/step + 0.5);
+%quan_uni function
+function quan_sig = quan_uni(signal, q)
+    for i=1:length(signal)
+        quan_sig(i) = quant(signal(i), q);
+        d = signal(i) - quan_sig(i);
+        if d == 0   
+            quan_sig(i) = quan_sig(i) + q/2;
+        elseif (d > 0) && (abs(d) < q/2)
+            quan_sig(i) = quan_sig(i) + q/2;
+        elseif (d > 0) && (abs(d) >= q/2)
+            quan_sig(i) = quan_sig(i) - q/2;
+        elseif (d < 0) && (abs(d) < q/2)
+            quan_sig(i) = quan_sig(i) - q/2;
+        elseif (d < 0) && (abs(d) >= q/2)
+            quan_sig(i) = quan_sig(i) + q/2;
+        end
+    end
 end
