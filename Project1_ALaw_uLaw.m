@@ -19,12 +19,32 @@ q = (V_p-(-V_p))/(L - 1);
 s_q_2 = quan_uni(mSpeech(1:length(t)), q);
 %3.Plot ‘mSpeech‘ and 𝑠𝑞2.
 plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r','DisplayName','Uniform quantized values');
-legend
+hold on;
 %4.Calculate the quantizer error variance (𝜎𝑠𝑞2)^2 and the ratio of average signal power to average quantization noise power (𝑆/𝑁)𝑠𝑞2 by the numerical method.
 %Quantizer error variance(numerical method)
 variance_sq_2 = quantizer_error_variance(s_q_2, q)
 %(S/N)sq2(numerical method)
 SNR_sq2 = SNR_quant(mSpeech, s_q_2, t)
+
+% 5. Compress the sample signal ‘mSpeech’
+mu = 255; % μ-law compression constant
+s_c_5 = sign(mSpeech(1:length(t))) .* (log(1 + mu * abs(mSpeech(1:length(t))) / V_p) ./ log(1 + mu)); % μ-law compression
+
+% Plot the compressed signal
+%figure;
+plot(t, s_c_5, 'yellow--', 'LineWidth', 2, 'DisplayName', 'Compressed signal (μ-law)');
+hold on;
+
+% 6. Quantize the compressed signal
+s_q_6 = quan_uni(s_c_5, q); % Uniform quantization of compressed signal
+plot(t, s_q_6, 'g^', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName','Quantized compressed signal');
+hold on;
+% Add legend and labels
+legend;
+xlabel('Time (s)');
+ylabel('Amplitude');
+title('Compression and Quantization');
+grid on;
 
 %quan_uni function
 function quan_sig = quan_uni(signal, q)
