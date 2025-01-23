@@ -94,3 +94,12 @@ function SNR_result = SNR_quant(original, signal, t)
     end
     SNR_result = pow_sig/pow_noise_uni;
 end
+
+%Question 7
+% Expand the quantized signal s_q6 to s_e7
+s_e_7 = s_q_6 * (1 + mu) ./ (log(1 + mu)); % μ-law expansion
+s_e_7 = sign(s_q_6) .* ((1 / mu) * (10.^(s_e_7 * mu) - 1)); % Optional detailed expansion
+
+% Plot the expanded signal s_e_7
+plot(t, s_e_7, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName', 'Expanded signal (s_e_7)');
+legend('Sample signal', 'Uniform quantized values', 'Compressed signal', 'Compressed quantized values', 'Expanded signal (s_e_7)');
