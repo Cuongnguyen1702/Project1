@@ -95,11 +95,37 @@ function SNR_result = SNR_quant(original, signal, t)
     SNR_result = pow_sig/pow_noise_uni;
 end
 
-%Question 7
-% Expand the quantized signal s_q6 to s_e7
+%7. Expand the quantized signal s_q6 to s_e7
 s_e_7 = s_q_6 * (1 + mu) ./ (log(1 + mu)); % μ-law expansion
 s_e_7 = sign(s_q_6) .* ((1 / mu) * (10.^(s_e_7 * mu) - 1)); % Optional detailed expansion
-
 % Plot the expanded signal s_e_7
-plot(t, s_e_7, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName', 'Expanded signal (s_e_7)');
-legend('Sample signal', 'Uniform quantized values', 'Compressed signal', 'Compressed quantized values', 'Expanded signal (s_e_7)');
+plot(t, s_e_7, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g');
+
+
+%8.Plot 𝑠𝑐4, 𝑠𝑞5, 𝑠𝑒6 in the same figure with mSpeech and 𝑠𝑞2.
+% Compress the sample signal to generate s_c4
+mu_c4 = 255; % μ-law compression constant for s_c4
+s_c4 = sign(mSpeech(1:length(t))) .* (log(1 + mu_c4 * abs(mSpeech(1:length(t))) / V_p) ./ log(1 + mu_c4));
+
+% Quantize the compressed signal to generate s_q5
+s_q5 = quan_uni(s_c4, q); % Uniform quantization for s_c4
+
+% Expand the quantized signal to generate s_e6
+s_e6 = sign(s_q5) .* ((1 / mu_c4) * ((1 + mu_c4) .^ abs(s_q5) - 1)); % μ-law expansion
+
+% Plot mSpeech, s_q_2, s_c4, s_q5, and s_e6 in the same figure
+figure;
+plot(t, mSpeech(1:length(t)), 'b-', 'LineWidth', 2, 'DisplayName', 'Sample signal');
+hold on;
+plot(t, s_q_2(1:length(t)), 'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r', 'DisplayName', 'Uniform quantized values');
+plot(t, s_c4, 'm--', 'LineWidth', 2, 'DisplayName', 'Compressed signal');
+plot(t, s_q5, 'b^', 'MarkerSize', 6, 'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'b', 'DisplayName', 'Compressed quantized values');
+plot(t, s_e6, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName', 'Nouniform quantized values');
+
+% Add legend, labels, and grid
+legend('Sample signal','Uniform quantized values','Compress signal','Compress quantized values','Nouniform quantized values');
+xlabel('Time (s)');
+ylabel('Amplitude');
+grid on;
+
+
