@@ -9,7 +9,7 @@ Fs = 4000;
 
 t = 0:1/Fs:1.5;
 mSpeech = mSpeech*10;%Amplifying signal
-plot(t, mSpeech(1:length(t)), 'LineWidth', 2, 'DisplayName','Sample signal');
+plot(t, mSpeech(1:length(t)), 'LineWidth', 2, 'DisplayName','Sample signal(mSpeech)');
 grid;
 hold on;
 %2.Quantize the sample signal ‘mSpeech’ with 𝐿 = 16, 𝑞 = 𝑉_𝑝/(𝐿 − 1), called 𝑠𝑞2 signal.
@@ -18,8 +18,9 @@ V_p = 0.5625;
 q = (V_p-(-V_p))/(L - 1);
 s_q_2 = quan_uni(mSpeech(1:length(t)), q);
 %3.Plot ‘mSpeech‘ and 𝑠𝑞2.
-plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r','DisplayName','Uniform quantized values');
+plot(t, s_q_2(1:length(t)),'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r','DisplayName','Uniform quantized values(sq2)');
 hold on;
+legend
 %4.Calculate the quantizer error variance (𝜎𝑠𝑞2)^2 and the ratio of average signal power to average quantization noise power (𝑆/𝑁)𝑠𝑞2 by the numerical method.
 %Quantizer error variance(numerical method)
 variance_sq_2 = quantizer_error_variance(s_q_2, q)
@@ -29,28 +30,21 @@ SNR_sq2 = SNR_quant(mSpeech, s_q_2, t)
 % 5. Compress the sample signal ‘mSpeech’
 mu = 255; % μ-law compression constant
 s_c_5 = sign(mSpeech(1:length(t))) .* (log(1 + mu * abs(mSpeech(1:length(t))) / V_p) ./ log(1 + mu)); % μ-law compression
-
-% Plot the compressed signal
-%figure;
-plot(t, s_c_5, 'yellow--', 'LineWidth', 2, 'DisplayName', 'Compressed signal (μ-law)');
-hold on;
+%A-Law compression
+if (s_c_5 < 1/87.6)
+    s_c_5 = sign(mSpeech(1:length(t))) .* (87.6*abs(mSpeech(1:length(t)) / V_p)) ./ (1 + log(87.6));
+else
+    s_c_5 = sign(mSpeech(1:length(t))) .* (1 + log(87.6*abs(mSpeech(1:length(t)) / V_p))) ./ (1 + log(87.6));
+end
 
 % 6. Quantize the compressed signal
 s_q_6 = quan_uni(s_c_5, q); % Uniform quantization of compressed signal
-plot(t, s_q_6, 'g^', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName','Quantized compressed signal');
-hold on;
-% Add legend and labels
-legend;
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Compression and Quantization');
-grid on;
 
 %7. Expand the quantized signal s_q6 to s_e7
 s_e_7 = s_q_6 * (1 + mu) ./ (log(1 + mu)); % μ-law expansion
 s_e_7 = sign(s_q_6) .* ((1 / mu) * (10.^(s_e_7 * mu) - 1)); % Optional detailed expansion
 % Plot the expanded signal s_e_7
-plot(t, s_e_7, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g');
+%plot(t, s_e_7, 'magenta', 'MarkerSize', 6, 'MarkerEdgeColor', 'magenta', 'MarkerFaceColor', 'g', 'DisplayName','s_q_6 expanded');
 
 
 %8.Plot 𝑠𝑐4, 𝑠𝑞5, 𝑠𝑒6 in the same figure with mSpeech and 𝑠𝑞2.
@@ -79,38 +73,25 @@ xlabel('Time (s)');
 ylabel('Amplitude');
 grid on;
 
-%7. Expand the quantized signal s_q6 to s_e7
-s_e_7 = s_q_6 * (1 + mu) ./ (log(1 + mu)); % μ-law expansion
-s_e_7 = sign(s_q_6) .* ((1 / mu) * (10.^(s_e_7 * mu) - 1)); % Optional detailed expansion
-% Plot the expanded signal s_e_7
-plot(t, s_e_7, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g');
+% 9. Calculate the average quantization noise power,
+% the average power of the analog signal, and SNR.
 
+% Calculate the quantization error between the original signal and expanded signal
+e_com = mSpeech(1:length(t)) - s_e_7;
 
-%8.Plot 𝑠𝑐4, 𝑠𝑞5, 𝑠𝑒6 in the same figure with mSpeech and 𝑠𝑞2.
-% Compress the sample signal to generate s_c4
-mu_c4 = 255; % μ-law compression constant for s_c4
-s_c4 = sign(mSpeech(1:length(t))) .* (log(1 + mu_c4 * abs(mSpeech(1:length(t))) / V_p) ./ log(1 + mu_c4));
+% Compute the average quantization noise power
+pow_noise_com = mean(e_com .^ 2);
 
-% Quantize the compressed signal to generate s_q5
-s_q5 = quan_uni(s_c4, q); % Uniform quantization for s_c4
+% Compute the average power of the original signal
+pow_sig = mean(mSpeech(1:length(t)).^ 2);
 
-% Expand the quantized signal to generate s_e6
-s_e6 = sign(s_q5) .* ((1 / mu_c4) * ((1 + mu_c4) .^ abs(s_q5) - 1)); % μ-law expansion
+% Compute the Signal-to-Noise Ratio (SNR) in dB
+SNR_a_com = 10 * log10(pow_sig ./ pow_noise_com);
 
-% Plot mSpeech, s_q_2, s_c4, s_q5, and s_e6 in the same figure
-figure;
-plot(t, mSpeech(1:length(t)), 'b-', 'LineWidth', 2, 'DisplayName', 'Sample signal');
-hold on;
-plot(t, s_q_2(1:length(t)), 'ro', 'MarkerSize', 6, 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r', 'DisplayName', 'Uniform quantized values');
-plot(t, s_c4, 'm--', 'LineWidth', 2, 'DisplayName', 'Compressed signal');
-plot(t, s_q5, 'b^', 'MarkerSize', 6, 'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'b', 'DisplayName', 'Compressed quantized values');
-plot(t, s_e6, 'g*', 'MarkerSize', 6, 'MarkerEdgeColor', 'g', 'MarkerFaceColor', 'g', 'DisplayName', 'Nouniform quantized values');
-
-% Add legend, labels, and grid
-legend('Sample signal','Uniform quantized values','Compress signal','Compress quantized values','Nouniform quantized values');
-xlabel('Time (s)');
-ylabel('Amplitude');
-grid on;
+% Display the results
+disp(['Average quantization noise power: ', num2str(pow_noise_com)]);
+disp(['Signal power: ', num2str(pow_sig)]);
+disp(['SNR: ', num2str(SNR_a_com), ' dB']);
 
 %quan_uni function
 function quan_sig = quan_uni(signal, q)
